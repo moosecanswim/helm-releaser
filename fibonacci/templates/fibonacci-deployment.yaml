@@ -1,23 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.fibonacci.name }}
+  name: {{.Release.Namespace}}-{{ .Release.Name }}
   labels:
-    service: {{ .Values.fibonacci.name }}
+    service: {{.Release.Namespace}}-{{ .Release.Name }}
     type: service
   namespace: {{ .Release.Namespace }}
 spec:
   selector:
     matchLabels:
-      app: {{ .Values.fibonacci.name }}
+      app: {{.Release.Namespace}}-{{ .Release.Name }}
+      {{.Values.global.mesh.label }}: {{.Release.Namespace}}-{{ .Values.fibonacci.name }}
   replicas: 1
   template:
     metadata:
       labels:
-        app: {{ .Values.fibonacci.name }}
+        app: {{.Release.Namespace}}-{{ .Release.Name }}
+        {{.Values.global.mesh.label }}: {{.Release.Namespace}}-{{ .Values.fibonacci.name }}
     spec:
       containers:
-      - name: {{ .Values.fibonacci.name }}
+      - name: {{ .Release.Name }}
         image: {{ tpl .Values.fibonacci.image $ | quote }}
         imagePullPolicy: {{ .Values.fibonacci.imagePullPolicy | quote }}
         env:

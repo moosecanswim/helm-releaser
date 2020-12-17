@@ -14,7 +14,7 @@ global:
 fibonacci:
     name: fibonacci
     version: 1.0.0
-    image: 'docker-greymatter.di2e.net/services/fibonacci:latest'
+    image: 'docker.greymatter.io/internal/fibonacci:latest'
     imagePullPolicy: Always
     base_path: /services/{{ $.Values.fibonacci.name }}/{{ $.Values.fibonacci.version }}
     zk_namespace: greymatter
@@ -35,8 +35,8 @@ fibonacci:
 
 
 sidecar:
-  version: 0.8.0
-  image: 'docker-greymatter.di2e.net/greymatter/gm-proxy:{{ $.Values.sidecar.version }}'
+  version: 1.5.0
+  image: 'docker.greymatter.io/development/gm-proxy:1.5.0-dev'
   imagePullPolicy: Always
   # resources:
   #   limits:
@@ -51,33 +51,13 @@ sidecar:
       value: 'true'
     xds_cluster:
       type: 'value'
-      value: 'fib'
-    xds_node_id:
-      type: 'value'
-      value: 'fib'
+      value: 'default-fibonacci'
     xds_host:
       type: 'value'
-      value: 'fib'
+      value: 'control.default.svc'
     xds_port:
       type: 'value'
-      value: '9080'
-  # Set this to true if you are attempting to deploy Catalog by itself.
-  # Ideally, catalog is deployed as a dependency to Grey Matter, which creates the
-  # sidecar secret, but if individual testing is being done, the sidecar secret will
-  # need to be created.
-  create_sidecar_secret: false
-  certificates:
-    name: sidecar
-    ca: |-
-      -----BEGIN CERTIFICATE-----
-      ...
-      -----END CERTIFICATE-----
-    cert: |-
-      -----BEGIN CERTIFICATE-----
-      ...
-      -----END CERTIFICATE-----
-    key: |-
-      -----BEGIN RSA PRIVATE KEY-----
-      ...
-      -----END RSA PRIVATE KEY-----
-
+      value: '50000'
+    spire_path:
+      type: 'value'
+      value: '/run/spire/socket/agent.sock'

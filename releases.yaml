@@ -1,9 +1,26 @@
-dia-test:
+test:
   configs:
     aws_profile: di2e-aws
-    values_path: "ns-release-values"
-    secret_path: "ns-release-secrets"
+    values_path: "release-values"
+    secret_path: "release-secrets"
   releases:
+    my-postgres:
+      chart:
+        path: groundhog2k/postgres
+        version: 0.2.5
+    fib:
+      chart:
+        path: fibonacci
+        # version: 0.1.0
+      release:
+        values: test/fib.yaml
+    fib2:
+      chart:
+        path: fibonacci
+        # version: 0.1.0
+      release:
+        values: test/fib.yaml
+        secrets: test/secrets.fib.yaml
     sidecar-certs:
       chart:
         path: secrets
@@ -30,6 +47,8 @@ dia-test:
         # values: temp.json
       configs:
         values_path: release-values
+
+
 dia-wisard:
   configs:
     aws_profile: di2e-aws

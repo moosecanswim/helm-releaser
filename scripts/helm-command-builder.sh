@@ -55,7 +55,7 @@ function validateRemoteChart {
     # get helm repo
     repo=$(echo $1 | awk -F/ '{print $1}' | tr -cd "[:alnum:]")
         # ensure repo is avalible locally
-        if [[ ! $repo == $(helm repo list | grep kanister | awk '{print $1}') ]]; then
+        if [[ ! $repo == $(helm repo list | grep ${repo} | awk '{print $1}') ]]; then
         printf "\n%s\n\n" "=====> The repo helm repo [$repo] is not avalible locally.  run a 'helm repo add $repo <repo url>' then run the make command again"
         exit 5
         fi
@@ -64,12 +64,21 @@ function validateRemoteChart {
 
 function validateUpgradeUninstall {
     # validate upgrade or uninstall
-        {
-            helm get all $2 -n $1 >/dev/null
-        } || {
-            printf "\n%s\n\n" "====> Helm release [$2] does not exist in namespace: [$1].  CANT UPGRADE OR UNINSTALL.  Exiting! "
-            exit 3
-        }
+    {
+        helm get all $2 -n $1 >/dev/null
+    } || {
+        printf "\n%s\n\n" "====> Helm release [$2] does not exist in namespace: [$1].  CANT UPGRADE OR UNINSTALL.  Exiting! "
+        exit 3
+    }
+}
+
+function validateNamespace {
+    {
+        kubectl get namespace $1 >/dev/null
+    } || {
+        printf "\n%s\n\n" "=====> Kubernetes Namespace [$1] does not exist. The namespace will be created."
+        kubectl create namespace $1
+    }
 }
 
 function validateAWS {
@@ -225,6 +234,7 @@ case $HELM_RUN_COMMAND in
         helm_run=$(printf "%s dec %s" "$helm_command" "$RELEASE_SECRETS_PATH/$RELEASE_SECRETS")
         ;;
     install)
+        validateNamespace $NAMESPACE
         echo "do an install"
         helm_run=$(printf "%s install %s %s %s %s %s %s" "$helm_command" "$RELEASE_NAME" "$CHART" "$helm_version" "$release_values_arg" "$release_secrets_arg" "-n $NAMESPACE")
         ;;
@@ -256,4 +266,4 @@ esac
 helm_run=$(printf "\n%s %s\n\n" "$helm_secrets_prefix" "$helm_run")
 
 printf "\n%s\n\n" "$helm_run"
-# eval $helm_run
+eval $helm_run
