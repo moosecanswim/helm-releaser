@@ -1,0 +1,27 @@
+Fibonacci {{ .Chart.Version }} has been installed.
+
+Helm Deployment: {{ .Release.Name }} 
+Deployed to Namespace {{ quote .Release.Namespace }} at {{now | date "03:04:05 on 01/02/03"}}
+
+
+NOTE: It may take a few minutes for the installation to become stable.
+    {{- if and .Values.global.environment (eq .Values.global.environment "openshift") }}
+    You can watch the status of the pods by running 'oc get pods -w -n {{ .Release.Namespace }}
+    {{- else }}
+    You can watch the status of the pods by running 'kubectl get pods -w -n {{ .Release.Namespace }}'
+    {{- end }}
+
+To see this service in the the dashboard you will need to add the following environmental variables for the catalog service.  In Openshift these can be added in the Applications> Deployment > Catalog > Environment Tab. 
+Increment <N> so if the last service defined in catalog's environment variables is 7 then replace <N> with 8. 
+
+
+| Parameter                                                 | Description                | Example                            |
+| --------------------------------------------------------- | -------------------------- | ---------------------------------- |
+| catalog.services.service_<N>.capability                   | Service Capability         | 'Grey Matter'                      |
+| catalog.services.service_<N>.documentation                | Service Documentation Path | ''                                 |
+| catalog.services.service_<N>.name                         | Service Name               | 'Grey Matter <Service_Name>'       |
+| catalog.services.service_<N>.owner                        | Service Owner              | 'Decipher'                         |
+| catalog.services.service_<N>.version                      | Service Version            | "0.1.2"                            |
+| catalog.services.service_<N>.zookeeper_announcement_point | Service ZK announce point  | "/services/catalog/0.1.2/metrics"  |
+
+Once these environmental variables are added catalog will need to restart for the effects to take effect.

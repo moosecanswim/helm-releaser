@@ -1,0 +1,81 @@
+global:
+  environment: openshift
+  domain:
+  route_url_name:
+  remove_namespace_from_url: ''
+  exhibitor:
+    replicas: 3
+  xds:
+    port: 18000
+    cluster: greymatter
+
+fibonacci:
+    name: fibonacci
+    version: 1.0.0
+    image: 'docker-greymatter.di2e.net/services/fibonacci:latest'
+    imagePullPolicy: Always
+    base_path: /services/{{ $.Values.fibonacci.name }}/{{ $.Values.fibonacci.version }}
+    zk_namespace: greymatter
+    service_port: 8080
+    proxy_port: 9080
+    # resources:
+    #   limits:
+    #     cpu: 200m
+    #     memory: 1Gii
+    #   requests:
+    #     cpu: 100m
+    #     memory: 128Mi
+    envvars:
+    - type: value
+      name: ENVAR_NAME1
+      value: kyle!
+
+
+
+sidecar:
+  version: 0.8.0
+  image: 'docker-greymatter.di2e.net/greymatter/gm-proxy:{{ $.Values.sidecar.version }}'
+  imagePullPolicy: Always
+  # resources:
+  #   limits:
+  #     cpu: 200m
+  #     memory: 512Mi
+  #   requests:
+  #     cpu: 100m
+  #     memory: 128Mi
+  envvars:
+    proxy_dynamic:
+      type: 'value'
+      value: 'true'
+    xds_cluster:
+      type: 'value'
+      value: 'fib'
+    xds_node_id:
+      type: 'value'
+      value: 'fib'
+    xds_host:
+      type: 'value'
+      value: 'fib'
+    xds_port:
+      type: 'value'
+      value: '9080'
+  # Set this to true if you are attempting to deploy Catalog by itself.
+  # Ideally, catalog is deployed as a dependency to Grey Matter, which creates the
+  # sidecar secret, but if individual testing is being done, the sidecar secret will
+  # need to be created.
+  create_sidecar_secret: false
+  certificates:
+    name: sidecar
+    ca: |-
+      -----BEGIN CERTIFICATE-----
+      ...
+      -----END CERTIFICATE-----
+    cert: |-
+      -----BEGIN CERTIFICATE-----
+      ...
+      -----END CERTIFICATE-----
+    key: |-
+      -----BEGIN RSA PRIVATE KEY-----
+      ...
+      -----END RSA PRIVATE KEY-----
+

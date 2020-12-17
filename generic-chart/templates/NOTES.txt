@@ -1,0 +1,7 @@
+Generic Deployment: {{.Values.service.name}} {{ .Chart.Version }} has been installed.
+
+Helm Deployment: {{ .Release.Name }} 
+Deployed to Namespace {{ quote .Release.Namespace }} at {{now | date "03:04:05 on 01/02/03"}}
+
+
+NOTE: It may take a few minutes for the installation to become stable.

@@ -1,0 +1,19 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ .Values.fibonacci.name }}-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - name: server
+      port: {{ .Values.fibonacci.service_port }}
+      protocol: TCP
+      targetPort: {{ .Values.fibonacci.service_port }}
+    - name: proxy
+      port: {{ .Values.fibonacci.proxy_port }}
+      protocol: TCP
+      targetPort: {{ .Values.fibonacci.proxy_port }}
+  selector:
+    app: {{ .Values.fibonacci.name }}
+  sessionAffinity: None
+  type: ClusterIP

@@ -1,0 +1,102 @@
+{{- if (eq .Values.release_type "statefulset" ) }}
+{{ $root := .}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    {{ .Values.mesh.control.label}}: {{.Release.Namespace}}-{{ .Values.service.name }}
+  name: {{ .Values.service.name }}
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  revisionHistoryLimit: 0
+  selector:
+    matchLabels:
+      {{ .Values.mesh.control.label}}: {{.Release.Namespace}}-{{ .Values.service.name }}
+  serviceName: {{ .Values.service.name }}
+  template:
+    metadata:
+      labels:
+        {{ .Values.mesh.control.label}}: {{.Release.Namespace}}-{{ .Values.service.name }}
+    spec:
+      containers:
+        - name: {{ .Values.service.name }}
+          image: {{ tpl $.Values.service.image $ | quote }}
+          imagePullPolicy:  {{ .Values.service.imagePullPolicy | quote }}
+          env:
+          {{- include "envvars" (dict "envvar" .Values.service.envvars "top" $) | indent 12 }}
+          {{- if .Values.service.ports }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          {{- end }}
+          {{- if .Values.service.resources }}
+          resources:
+{{ toYaml .Values.service.resources | indent 12 }}
+          {{- end }}         
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          {{- if .Values.service.storage }}
+          volumeMounts:
+          {{- range $v := .Values.service.storage }}
+            - mountPath: {{ $v.mountPath }}
+              name: {{ tpl $v.name $root }}
+          {{- end }}
+          {{- end }}
+        
+        - name: sidecar
+          image: {{ tpl $.Values.sidecar.image $ | quote }}
+          imagePullPolicy:  {{ .Values.sidecar.imagePullPolicy | quote }}
+          env:
+          {{- include "envvars" (dict "envvar" .Values.sidecar.envvars "top" $) | indent 12 }}
+          ports:
+            - containerPort: {{ .Values.sidecar.ports.ingress }}
+              name: proxy
+              protocol: TCP
+            - containerPort: 8081
+              name: metrics
+              protocol: TCP
+          resources:
+{{ toYaml .Values.sidecar.resources | indent 12 }}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /etc/proxy/tls/sidecar
+              name: sidecar-secret
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+{{- if .Values.imagePullSecrets }}
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- else }}
+        - name: docker.secret
+{{- end }}
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: sidecar-secret
+          secret:
+            defaultMode: 420
+            optional: false
+            secretName: {{ .Values.sidecar.certificates.name | default "sidecar-certs"}}
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+
+  {{- if .Values.service.storage }}
+
+  volumeClaimTemplates:
+    {{- range $v := .Values.service.storage }}
+    - metadata:
+        name: {{tpl $v.name $root}}
+        namespace: {{ $.Release.Namespace }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ $v.size }}
+    {{- end }}
+  {{- end }}
+
+{{- end }}

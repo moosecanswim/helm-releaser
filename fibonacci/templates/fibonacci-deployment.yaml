@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.fibonacci.name }}
+  labels:
+    service: {{ .Values.fibonacci.name }}
+    type: service
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.fibonacci.name }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.fibonacci.name }}
+    spec:
+      containers:
+      - name: {{ .Values.fibonacci.name }}
+        image: {{ tpl .Values.fibonacci.image $ | quote }}
+        imagePullPolicy: {{ .Values.fibonacci.imagePullPolicy | quote }}
+        env:
+      {{- range $envvar := .Values.fibonacci.envvars }}
+      {{- $envName := $envvar.name | upper | replace "." "_" | replace "-" "_" }}
+        {{- if eq $envvar.type "secret" }}
+        - name: {{ $envName }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ $envvar.secret }}
+              key: {{ $envvar.key }}
+        {{- else if eq $envvar.type "value" }}
+        - name: {{ $envName }}
+          value: {{ tpl $envvar.value $ | quote }}
+        {{- end }}
+      {{- end  }}  
+        {{- if .Values.fibonacci.resources }}
+        resources:
+{{ toYaml .Values.fibonacci.resources | indent 10 }}
+        {{- end }}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+          - mountPath: /opt/services/resources/certs
+            name: certs
+
+      - name: sidecar
+        image: {{ tpl $.Values.sidecar.image $ | quote }}
+        imagePullPolicy: {{ .Values.sidecar.imagePullPolicy | quote }}
+        env:
+        {{- include "greymatter.envvars" . | indent 10 }}
+        ports:
+          - containerPort: 8080
+            name: http-port
+            protocol: TCP
+          - containerPort: 8443
+            name: https-port
+            protocol: TCP
+          - containerPort: 8081
+            name: metrics
+            protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+          - name: sidecar
+            mountPath: /etc/proxy/tls/sidecar
+
+      imagePullSecrets:
+        - name: docker-greymatter-ro
+      restartPolicy: Always
+      serviceAccount: default
+      serviceAccountName: default
+      volumes:
+        - name: sidecar
+          secret:
+            secretName: sidecar
+        - name: certs
+          secret: 
+            secretName: certificate-dump
+        - name: jks
+          secret: 
+            secretName: jks
+        - name: administrators
+          configMap:
+            name: administrators
+            defaultMode: 420
+            items:
+              - key: administrators.txt
+                path: administrators.txt
+        - name: administrators-pvl92
+          configMap:
+            defaultMode: 420
+            name: administrators

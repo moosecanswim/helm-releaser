@@ -1,0 +1,89 @@
+global:
+  environment: openshift
+
+mesh:
+  control:
+    # this label is for service discovery
+    label: 'greymatter.io/control'
+    # namespace is the namespace where control lives
+    namespace: 'dia-greymatter'
+    port: '50000'
+  zone: 'zone-default-zone'
+
+# release_type allows you to choose deployment or statefulset (defaults to deployment if blank)
+release_type: statefulset
+
+imagePullSecrets:
+  - name: docker.secret
+  - name: docker-greymatter-ro
+
+service:
+  # name: self explanitory.  just the name of the service ex: poa-ui, wisard, spacy-nlp 
+  name: nifi
+  # version: image tag
+  version: 1.11.4
+  image: 'docker-greymatter.di2e.net/services/nifi-openshift:{{ $.Values.service.version }}'
+  imagePullPolicy: Always
+  # resources: override defaults for your release namespace 
+  resources:
+    limits:
+      cpu: 500m
+      memory: 521Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  # port: what port does the service serve up requests
+  port: 8002
+  # envars: envars here will be set in the pod.  "type" is generally value but can be [value, template, or secret]
+  envvars:
+    PORT:
+      type: 'value'
+      value: '{{ $.Values.service.port }}'
+    NAME:
+      type: 'value'
+      value: "your name"
+  # storage:
+  #   # name should should be of the form <something>-pvc-{{.Release.Name}}
+  #   - name: '{{ $.Values.service.name }}-pvc-{{ $.Release.Name }}'
+  #     mountPath: /opt/generic-path
+  #     # size is only used for stateful set deployments use an emptydir volume is set up for deployments
+  #     size: 4Gi
+
+
+# Most helm releases using this chart will not need this to be modified
+sidecar:
+  version: 1.4.4
+  image: 'docker-greymatter.di2e.net/greymatter/gm-proxy:{{ $.Values.sidecar.version }}'
+  certificates:
+    name: sidecar-certs
+  imagePullPolicy: Always
+  resources:
+    limits:
+      cpu: 200m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  ports:
+    ingress: 10808
+    egress: 10909
+  envvars:
+    proxy_dynamic:
+      type: 'value'
+      value: 'true'
+    xds_cluster:
+      type: 'value'
+      value: '{{ .Release.Namespace }}-{{ .Values.service.name }}'
+    xds_zone:
+      type: 'value'
+      value: '{{ .Values.mesh.zone }}'
+    xds_host:
+      type: 'value'
+      value: 'control.{{ $.Values.mesh.control.namespace }}.svc.cluster.local'
+    xds_port:
+      type: 'value'
+      value: '{{ .Values.mesh.control.port }}'
+    envoy_admin_log_path:
+      type: 'value'
+      value: '/dev/stdout'
+
