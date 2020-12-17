@@ -78,7 +78,7 @@ function validateAWS {
         echo "$1 Exists" 
     else
         echo "$1 Does not exist.  You will need to add it locally then run the install again." 
-        exit
+        exit 4
     fi
 }
 
