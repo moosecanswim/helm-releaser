@@ -45,7 +45,7 @@ function checkCommand {
         if [[ ! -z $2 ]]; then
             printf "%s\n\n" "======> Use \"$2\" to install"
         fi
-        exit
+        exit 5
     fi
 }
 
@@ -84,7 +84,7 @@ function validateAWS {
 
 # ensure prerequisite commands are locally avalible 
 checkCommand jq "brew install jq"
-checkCommand yq "brew install yq"
+checkCommand yq "pip3 install yq"
 checkCommand helm "brew install kubernetes-helm"
 checkCommand aws "brew install awscli"
 checkCommand sops "brew install sops"
