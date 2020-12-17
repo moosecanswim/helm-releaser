@@ -1,3 +1,29 @@
+test:
+  configs:
+    aws_profile: di2e-aws
+    values_path: "release-values"
+    secret_path: "release-secrets"
+  releases:
+    fib-hack:
+      chart:
+        path: fibonacci
+        version: 1.0.0
+      release:
+        secrets: "secrets.fib.yaml"
+        values: "fib.yaml"
+testtest:
+  configs:
+    aws_profile: di2e-aws
+    values_path: "release-values"
+    secret_path: "release-secrets"
+  releases:
+    fib-hack:
+      chart:
+        path: fibonacci
+        version: 1.0.0
+      release:
+        secrets: "secrets.ttfib.yaml"
+        values: "fib.yaml"
 dia-test:
   configs:
     aws_profile: di2e-aws

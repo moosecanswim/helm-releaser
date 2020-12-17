@@ -226,18 +226,18 @@ case $HELM_RUN_COMMAND in
         ;;
     install)
         echo "do an install"
-        helm_run=$(printf "%s install %s %s %s %s %s %s" "$helm_command" $RELEASE_NAME $CHART $helm_version "$release_values_arg" "$release_secrets_arg" "-n $NAMESPACE")
+        helm_run=$(printf "%s install %s %s %s %s %s %s" "$helm_command" "$RELEASE_NAME" "$CHART" "$helm_version" "$release_values_arg" "$release_secrets_arg" " -n $NAMESPACE")
         ;;
     upgrade)
         echo "do an upgrade"
-        validateUpgradeUninstall $NAMESPACE $RELEASE_NAME
-        helm_run=$(printf "%s upgrade %s %s %s %s %s %s" "$helm_command" $RELEASE_NAME $CHART $helm_version "$release_values_arg" "$release_secrets_arg" "-n $NAMESPACE")
+        # validateUpgradeUninstall $NAMESPACE $RELEASE_NAME
+        helm_run=$(printf "%s upgrade %s %s %s %s %s %s" "$helm_command" $RELEASE_NAME $CHART $helm_version "$release_values_arg" "$release_secrets_arg" " -n $NAMESPACE")
         ;;
     uninstall)
         echo "do an uninstall"
         validateUpgradeUninstall $NAMESPACE $RELEASE_NAME
         helm_secrets_prefix=""
-        helm_run=$(printf "helm uninstall %s %s\n\n" $RELEASE_NAME "-n $NAMESPACE")
+        helm_run=$(printf "helm uninstall %s %s\n\n" $RELEASE_NAME " -n $NAMESPACE")
         ;;
     template)
         echo "do an template"
@@ -246,7 +246,7 @@ case $HELM_RUN_COMMAND in
         else
             template_location="> $RELEASE_NAME-latest-template.yaml"
         fi
-        helm_run=$(printf "%s template %s %s %s %s %s %s %s" "$helm_command" $RELEASE_NAME $CHART $helm_version "$release_values_arg" "$release_secrets_arg" "-n $NAMESPACE" $template_location)
+        helm_run=$(printf "%s template %s %s %s %s %s %s %s" "$helm_command" $RELEASE_NAME $CHART $helm_version "$release_values_arg" "$release_secrets_arg" " -n $NAMESPACE" $template_location)
         ;;
     *)
         echo "This helm run command [$1] not known.  use one of the following [enc, dec, install, upgrade, template, uninstall]"
