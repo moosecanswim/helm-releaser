@@ -26,8 +26,8 @@ dia-test:
         path: kanister/kanister-mongodb-replicaset
         version: 0.32.0
       release:
-        secrets: apple.yaml
-        values: temp.json
+        # secrets: apple.yaml
+        # values: temp.json
       configs:
         values_path: release-values
 dia-wisard:
