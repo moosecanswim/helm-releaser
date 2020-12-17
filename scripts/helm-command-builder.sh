@@ -195,10 +195,11 @@ validateRemoteChart $CHART
 
 # Create the prefix and suffix for helm secrets
 helm_secrets_prefix=" "
+helm_command="helm"
 if [[ ! $RELEASE_SECRETS == null ]];then
     # ensure this profile is avalible locally
     validateAWS $AWS_PROFILE
-
+    helm_command="helm secrets"
     release_secrets_arg="-f $RELEASE_SECRETS_PATH/$RELEASE_SECRETS"
     # place helm secrets validation in here when its ready
     helm_secrets_prefix="AWS_PROFILE=$AWS_PROFILE"
@@ -217,20 +218,20 @@ fi
 case $HELM_RUN_COMMAND in
     enc)
         echo "Do an encrypt"
-        helm_run=$(printf "helm secrets enc %s" "$RELEASE_SECRETS_PATH/$RELEASE_SECRETS")
+        helm_run=$(printf "%s enc %s" "$helm_command" "$RELEASE_SECRETS_PATH/$RELEASE_SECRETS")
         ;;
     dec)
         echo "do a decrypt"
-        helm_run=$(printf "helm secrets dec %s" "$RELEASE_SECRETS_PATH/$RELEASE_SECRETS")
+        helm_run=$(printf "%s dec %s" "$helm_command" "$RELEASE_SECRETS_PATH/$RELEASE_SECRETS")
         ;;
     install)
         echo "do an install"
-        helm_run=$(printf "helm install %s %s %s %s %s %s" $RELEASE_NAME $CHART $helm_version "$release_values_arg" "$release_secrets_arg" "-n $NAMESPACE")
+        helm_run=$(printf "%s install %s %s %s %s %s %s" "$helm_command" $RELEASE_NAME $CHART $helm_version "$release_values_arg" "$release_secrets_arg" "-n $NAMESPACE")
         ;;
     upgrade)
         echo "do an upgrade"
         validateUpgradeUninstall $NAMESPACE $RELEASE_NAME
-        helm_run=$(printf "helm upgrade %s %s %s %s %s %s" $RELEASE_NAME $CHART $helm_version "$release_values_arg" "$release_secrets_arg" "-n $NAMESPACE")
+        helm_run=$(printf "%s upgrade %s %s %s %s %s %s" "$helm_command" $RELEASE_NAME $CHART $helm_version "$release_values_arg" "$release_secrets_arg" "-n $NAMESPACE")
         ;;
     uninstall)
         echo "do an uninstall"
@@ -245,7 +246,7 @@ case $HELM_RUN_COMMAND in
         else
             template_location="> $RELEASE_NAME-latest-template.yaml"
         fi
-        helm_run=$(printf "helm template %s %s %s %s %s %s %s" $RELEASE_NAME $CHART $helm_version "$release_values_arg" "$release_secrets_arg" "-n $NAMESPACE" $template_location)
+        helm_run=$(printf "%s template %s %s %s %s %s %s %s" "$helm_command" $RELEASE_NAME $CHART $helm_version "$release_values_arg" "$release_secrets_arg" "-n $NAMESPACE" $template_location)
         ;;
     *)
         echo "This helm run command [$1] not known.  use one of the following [enc, dec, install, upgrade, template, uninstall]"
