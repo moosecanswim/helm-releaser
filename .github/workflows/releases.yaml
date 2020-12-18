@@ -1,0 +1,25 @@
+---
+on:
+  push:
+    tags:
+      - '*'
+name: Release
+jobs:
+  tagged-release:
+    name: Tagged Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false
+  bump-homebrew:
+    name: Bump Homebrew Formula
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mislav/bump-homebrew-formula-action@v1
+        with:
+          formula-name: helm-releaser
+          homebrew-tap: moosecanswim/homebrew-moosecanswim
+        env:
+          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
