@@ -10,6 +10,7 @@ default:
         # version: 0.1.0
       release:
         values: test/fib.yaml
+        # secrets: test/secrets.fib.yaml
     fib2:
       chart:
         path: fibonacci
