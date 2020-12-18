@@ -91,6 +91,18 @@ function validateAWS {
     fi
 }
 
+function validateFile {
+    # Validate a file $1 (filepath/file) exists
+    if [[ -f $1 ]]; then 
+        echo "file found"
+    else
+        echo "file not found"
+        printf "\n%s\n\n" "====> The file [$1] could not be found"
+        exit 3
+    fi
+
+}
+
 # ensure prerequisite commands are locally avalible 
 checkCommand jq "brew install jq"
 checkCommand yq "pip3 install yq"
@@ -205,11 +217,18 @@ validateRemoteChart $CHART
 # Create the prefix and suffix for helm secrets
 helm_secrets_prefix=" "
 helm_command="helm"
-if [[ ! $RELEASE_SECRETS == null ]];then
+
+if [ ! $RELEASE_SECRETS == null ] && [ ! "$?" == "3" ];then
     # ensure this profile is avalible locally
     validateAWS $AWS_PROFILE
     helm_command="helm secrets"
-    release_secrets_arg="-f $RELEASE_SECRETS_PATH/$RELEASE_SECRETS"
+    fcheck="$RELEASE_SECRETS_PATH/$RELEASE_SECRETS"
+    validateFile "$fcheck"
+    if [ $? != 3 ]; then 
+        release_secrets_arg="-f $RELEASE_SECRETS_PATH/$RELEASE_SECRETS"
+    else
+        exit 3
+    fi
     # place helm secrets validation in here when its ready
     helm_secrets_prefix="AWS_PROFILE=$AWS_PROFILE"
 fi
@@ -218,8 +237,14 @@ if [[ ! $VERSION == null ]];then
     helm_version="--version $VERSION"
 fi
 # set release values argument
-if [[ ! $RELEASE_VALUES == null ]];then
-    release_values_arg="-f $RELEASE_VALUES_PATH/$RELEASE_VALUES"
+
+if [ ! $RELEASE_VALUES == null ];then
+    validateFile "${RELEASE_VALUES_PATH}/${RELEASE_VALUES}"
+    if [ $? != 3 ]; then 
+        release_values_arg="-f $RELEASE_VALUES_PATH/$RELEASE_VALUES"
+    else
+        exit 3
+    fi
 fi
 
 
@@ -266,4 +291,4 @@ esac
 helm_run=$(printf "\n%s %s\n\n" "$helm_secrets_prefix" "$helm_run")
 
 printf "\n%s\n\n" "$helm_run"
-eval $helm_run
+# eval $helm_run
