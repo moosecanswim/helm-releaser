@@ -1,4 +1,4 @@
-FROM alpine/helm:3.4.2
+FROM alpine/helm:3.2.4
 
 ARG jq_version='1.6-r1'
 ARG yq_version='2.11.1'
