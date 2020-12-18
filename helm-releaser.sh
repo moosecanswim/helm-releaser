@@ -2,12 +2,18 @@
 
 DOCKER_IMAGE=test:latest
 
+askExportVars=0
+
 set -e
 shopt -s xpg_echo
 
 function print_usage {
   echo "Usage: helm-releaser.sh [-k path-to-kubeconfig-file]"
 }
+
+# Pull in ENV varaibles
+[ ! -z $HR_AWSCONFIG_DIR ] && awsConfigDir=$HR_AWSCONFIG_DIR
+[ ! -z $HR_KUBECONFIG ] && kubeConfig=$HR_KUBECONFIG
 
 while getopts ":k:a:r:h" OPT; do
   case ${OPT} in
@@ -34,17 +40,12 @@ while getopts ":k:a:r:h" OPT; do
 done
 shift $((OPTIND -1))
 
-if [[ $# -lt 2 || $# -gt 3 ]]; then
-  echo "Error: Invalid number of command arguments."
-  echo "Expecting [command] [namespace] [release] or [command] [namespace]"
-  exit 1
-fi
-
 # Prompt for kubeconfig if not set
 if [ -z $kubeConfig ]; then
   echo -n "Path to kubeconfig file: "
   read kubeConfig
   kubeConfig=${kubeConfig/#\~/$HOME}
+  askExportVars=1
 fi
 
 # Prompt for release directory if not set
@@ -59,9 +60,21 @@ if [ -z $awsConfigDir ]; then
   echo -n "Path to AWS config directory: "
   read awsConfigDir
   awsConfigDir=${awsConfigDir/#\~/$HOME}
+  askExportVars=1
 fi
 
-echo $kubeConfig
+if [ $askExportVars -eq 1 ]; then
+  echo "\nFor future use, you can export the following environment variables or"
+  echo "add them to your profile."
+  echo "    export HR_AWSCONFIG_DIR=$awsConfigDir"
+  echo "    export HR_KUBECONFIG=$kubeConfig"
+fi
+
+if [[ $# -lt 2 || $# -gt 3 ]]; then
+  echo "Error: Invalid number of command arguments."
+  echo "Expecting [command] [namespace] [release] or [command] [namespace]"
+  exit 1
+fi
 
 #######################
 ###  Sanity Checks  ###
