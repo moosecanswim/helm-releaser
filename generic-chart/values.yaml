@@ -1,12 +1,12 @@
 global:
-  environment: openshift
+  environment: kubernetes
 
 mesh:
   control:
     # this label is for service discovery
     label: 'greymatter.io/control'
     # namespace is the namespace where control lives
-    namespace: 'dia-greymatter'
+    namespace: 'default'
     port: '50000'
   zone: 'zone-default-zone'
 
@@ -52,8 +52,8 @@ service:
 
 # Most helm releases using this chart will not need this to be modified
 sidecar:
-  version: 1.4.4
-  image: 'docker-greymatter.di2e.net/greymatter/gm-proxy:{{ $.Values.sidecar.version }}'
+  version: 1.5.0
+  image: 'docker.greymatter.io/development/gm-proxy:1.5.0-dev'
   certificates:
     name: sidecar-certs
   imagePullPolicy: Always
