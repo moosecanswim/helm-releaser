@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DOCKER_IMAGE=test:latest
+DOCKER_IMAGE=docker.greymatter.io/internal/helm-releaser:latest
 
 askExportVars=0
 
