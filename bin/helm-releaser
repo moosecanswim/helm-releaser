@@ -1,20 +1,88 @@
 #!/usr/bin/env bash
 
-DOCKER_IMAGE=docker.greymatter.io/internal/helm-releaser:latest
-
-askExportVars=0
-
+### Set shell options
 set -e
 shopt -s xpg_echo
 
+### Set Docker image
+DOCKER_IMAGE=docker.greymatter.io/internal/helm-releaser:latest
+
+### Formatting shortcuts for print_usage
+ul=`tput smul`
+nul=`tput rmul`
+bld=`tput bold`
+nml=`tput sgr0`
+
+### Usage function
 function print_usage {
-  echo "Usage: helm-releaser.sh [-k path-to-kubeconfig-file]"
+  echo "${bld}NAME${nml}"
+  echo ""
+  echo "     ${bld}helm-releaser${nml} -- Helm release tool"
+  echo ""
+  echo "${bld}USAGE${nml}"
+  echo "     ${bld}helm-releaser${nml} ${bld}-r${nml} ${ul}release_dir${nul} [${bld}-k${nml} ${ul}kubeconfig_file${nul}] [${bld}-a${nml} ${ul}aws-config-dir${nul}] ${ul}action${nul} ${ul}namespace${nul} [${ul}release${nul}]"
+  echo ""
+  echo "${bld}DESCRIPTION${nml}"
+  echo "     This command is wrapper for running the ${bld}helm-command-builder${nml} tool inside a Docker container. This"
+  echo "     command and the underlying components seek to simplify the commands and configurations required to perform"
+  echo "     helm and helm secrets operations"
+  echo ""
+  echo "     The options are as follows:"
+  echo ""
+  echo "     ${bld}-r${nml} ${ul}release_dir${nul}"
+  echo "             Specifies the release directory where the releases.yaml, Helm charts, and secrets are stored."
+  echo ""
+  echo "     ${bld}-k${nml} ${ul}kubeconfig_file${nul}"
+  echo "             Specifies the kubeconfig file to be used when executing various actions against Kubernets clusters. For"
+  echo "             most users, this file will be located at '~/.kube/config'."
+  echo ""
+  echo "     ${bld}-a${nml} ${ul}aws-config-dir${nul}"
+  echo "             Specifies the directory containing the AWS profile configurations. For most users, this directory be located"
+  echo "             at '~/.aws'."
+  echo "     ${ul}action${nul}"
+  echo "             This corresponds to the Helm action to use. Valid options are: ${bld}install${nml}, ${bld}upgrade${nml}, ${bld}template${nml}, ${bld}uninstall${nml}, ${bld}enc${nml}, ${bld}dec${nml}"
+  echo ""
+  echo "     ${ul}namespace${nul}"
+  echo "             Selects the namespace in the ${bld}releases.yaml${nml} file to target with the ${ul}action${nul}."
+  echo ""
+  echo "     ${ul}release${nul}"
+  echo "             Selects the release in the ${bld}releases.yaml${nml} file to target with the ${ul}action${nul}. If no ${ul}release${nul} is specified,"
+  echo "             all releases in the specified ${ul}namespace${nul} will be be targeted instead."
+  echo ""
+  echo "${bld}CONFIGURATION${nml}"
+  echo "     The below environment variables can be set outside of this command instead of being passed via command-line or being"
+  echo "     asked via prompt:"
+  echo ""
+  echo "             export HR_AWSCONFIG_DIR=${ul}aws-config-dir${nul}"
+  echo "             export HR_KUBECONFIG=${ul}kubeconfig_file${nul}"
+  echo ""
+  echo "     This script uses an input file ${bld}releases.yaml${nml} which defines releases:"
+  echo ""
+  echo "     namespace:"
+  echo "       configs:"
+  echo "         aws_profile: name of aws profile to use with secrets"
+  echo "         secret_path: default path to source secrets for the namespace"
+  echo "         values_path: default path to source release values for the namespace"
+  echo "       releases:"
+  echo "         a-release-name:"
+  echo "           chart:"
+  echo "             path: path to helm chart (can be local chart, remote chart, or tarball)"
+  echo "             version: chart version"
+  echo "           release:"
+  echo "             values: name of the release values file (relative to path defined in values_path)"
+  echo "             secrets: name of the release secrets file (relative to path defined in secret_path)"
+  echo "           config: (optional if the release has different release values/secrets path than those defined in namespace.configs)"
+  echo "             aws_profile: name of aws profile to use with secrets"
+  echo "             secret_path: override path to source release secrets"
+  echo "             values_path: overides path to source release values"
+  echo ""
 }
 
-# Pull in ENV varaibles
+### Check if appropriate environment variables are set
 [ ! -z $HR_AWSCONFIG_DIR ] && awsConfigDir=$HR_AWSCONFIG_DIR
 [ ! -z $HR_KUBECONFIG ] && kubeConfig=$HR_KUBECONFIG
 
+### Parse command-line options
 while getopts ":k:a:r:h" OPT; do
   case ${OPT} in
     k)
@@ -40,12 +108,15 @@ while getopts ":k:a:r:h" OPT; do
 done
 shift $((OPTIND -1))
 
+### If command-line args are missing, prompt for them
+printEnvVarMessage=0
+
 # Prompt for kubeconfig if not set
 if [ -z $kubeConfig ]; then
   echo -n "Path to kubeconfig file: "
   read kubeConfig
   kubeConfig=${kubeConfig/#\~/$HOME}
-  askExportVars=1
+  printEnvVarMessage=1
 fi
 
 # Prompt for release directory if not set
@@ -60,37 +131,31 @@ if [ -z $awsConfigDir ]; then
   echo -n "Path to AWS config directory: "
   read awsConfigDir
   awsConfigDir=${awsConfigDir/#\~/$HOME}
-  askExportVars=1
+  printEnvVarMessage=1
 fi
 
-if [ $askExportVars -eq 1 ]; then
+if [ $printEnvVarMessage -eq 1 ]; then
   echo "\nFor future use, you can export the following environment variables or"
   echo "add them to your profile."
   echo "    export HR_AWSCONFIG_DIR=$awsConfigDir"
   echo "    export HR_KUBECONFIG=$kubeConfig"
 fi
 
+### Check for Helm arguments
 if [[ $# -lt 2 || $# -gt 3 ]]; then
   echo "Error: Invalid number of command arguments."
   echo "Expecting [command] [namespace] [release] or [command] [namespace]"
   exit 1
 fi
 
-#######################
-###  Sanity Checks  ###
-#######################
-
+### Sanity checks
 # Check if files/paths are valid
 [ ! -f $kubeConfig ] && echo "Error: kubeconfig '$kubeConfig' does not exist or is not readable" && exit 1
 [ ! -d $releaseDir ] && echo "Error: release directory '$releaseDir' does not exist or is not readable" && exit 1
 [ ! -d $awsConfigDir ] && echo "Error: AWS config directory '$awsConfigDir' does not exist or is not readable" && exit 1
 
-#### Add command checks for: docker
 
-######
-###
-######
-
+### Construct the Docker command
 dockerCmd="docker run --rm"
 dockerCmd="${dockerCmd} -v ${kubeConfig}:/root/.kube/config"
 dockerCmd="${dockerCmd} -v ${releaseDir}:/release"
@@ -98,6 +163,7 @@ dockerCmd="${dockerCmd} -v ${awsConfigDir}:/root/.aws"
 dockerCmd="${dockerCmd} ${DOCKER_IMAGE}"
 dockerCmd="${dockerCmd} $@"
 
+### Print out the configs
 echo "\nKubeConfig     = $kubeConfig"
 echo "Release Dir    = $releaseDir"
 echo "AWS Config dir = $awsConfigDir"
@@ -105,6 +171,7 @@ echo "AWS Config dir = $awsConfigDir"
 echo "\nThe Docker command that will be executed is:"
 echo "    ${dockerCmd}"
 
+### Final confirmation before running
 echo -n "\nDo you want to proceed (yes|no): "
 read proceed
 echo ""
