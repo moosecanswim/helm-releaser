@@ -1,6 +1,6 @@
 default:
   configs:
-    aws_profile: di2e-aws
+    aws_profile: bs-resources-admin
     values_path: "release-values"
     secret_path: "release-secrets"
   releases:
