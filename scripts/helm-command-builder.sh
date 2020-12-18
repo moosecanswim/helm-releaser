@@ -91,6 +91,18 @@ function validateAWS {
     fi
 }
 
+function validateFile {
+    # Validate a file $1 (filepath/file) exists
+    if [[ -f $1 ]]; then 
+        echo "file found"
+    else
+        echo "file not found"
+        printf "\n%s\n\n" "====> The file [$1] could not be found"
+        exit 3
+    fi
+
+}
+
 # ensure prerequisite commands are locally avalible 
 checkCommand jq "brew install jq"
 checkCommand yq "pip3 install yq"
@@ -218,8 +230,11 @@ if [[ ! $VERSION == null ]];then
     helm_version="--version $VERSION"
 fi
 # set release values argument
-if [[ ! $RELEASE_VALUES == null ]];then
+validateFile "${RELEASE_VALUES_PATH}/${RELEASE_VALUES}"
+if [ ! $RELEASE_VALUES == null ] && [ ! "$?" == "3" ];then
     release_values_arg="-f $RELEASE_VALUES_PATH/$RELEASE_VALUES"
+else
+    exit 3
 fi
 
 
@@ -266,4 +281,4 @@ esac
 helm_run=$(printf "\n%s %s\n\n" "$helm_secrets_prefix" "$helm_run")
 
 printf "\n%s\n\n" "$helm_run"
-eval $helm_run
+# eval $helm_run
