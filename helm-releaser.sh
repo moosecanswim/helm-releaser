@@ -77,8 +77,9 @@ echo $kubeConfig
 ######
 ###
 ######
+
 dockerCmd="docker run --rm"
-dockerCmd="${dockerCmd} -v ${kubeConfig}:/.kube/config"
+dockerCmd="${dockerCmd} -v ${kubeConfig}:/root/.kube/config"
 dockerCmd="${dockerCmd} -v ${releaseDir}:/release"
 dockerCmd="${dockerCmd} -v ${awsConfigDir}:/root/.aws"
 dockerCmd="${dockerCmd} ${DOCKER_IMAGE}"
