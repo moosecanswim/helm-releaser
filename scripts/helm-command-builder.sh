@@ -163,10 +163,10 @@ RELEASE_RELEASE_VALUES_PATH=$(echo $asset_release_configs | jq -r '.values_path'
 # if the release has configus use those otherwise use the namespace level configs
 if [[ ! $RELEASE_AWS_PROFILE == null ]]; then
     echo "using release config aws_profile"
-    AWS_PROFILE=$RELEASE_AWS_PROFILE
+    export AWS_PROFILE=$RELEASE_AWS_PROFILE
 else
     echo "Using namespace config aws_profile"
-    AWS_PROFILE=$NS_AWS_PROFILE
+    export AWS_PROFILE=$NS_AWS_PROFILE
 fi
 if [[ ! $RELEASE_RELEASE_SECRETS_PATH == null ]]; then
     echo "using release config csf"
