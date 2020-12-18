@@ -10,13 +10,13 @@ spec:
   selector:
     matchLabels:
       app: {{.Release.Namespace}}-{{ .Release.Name }}
-      {{.Values.global.mesh.label }}: {{.Release.Namespace}}-{{ .Values.fibonacci.name }}
+      {{.Values.global.mesh.label }}:  {{.Release.Namespace}}-{{ .Release.Name }}
   replicas: 1
   template:
     metadata:
       labels:
         app: {{.Release.Namespace}}-{{ .Release.Name }}
-        {{.Values.global.mesh.label }}: {{.Release.Namespace}}-{{ .Values.fibonacci.name }}
+        {{.Values.global.mesh.label }}: {{.Release.Namespace}}-{{ .Release.Name }}
     spec:
       containers:
       - name: {{ .Release.Name }}
@@ -42,9 +42,6 @@ spec:
         {{- end }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
-        volumeMounts:
-          - mountPath: /opt/services/resources/certs
-            name: certs
 
       - name: sidecar
         image: {{ tpl $.Values.sidecar.image $ | quote }}
@@ -52,8 +49,8 @@ spec:
         env:
         {{- include "greymatter.envvars" . | indent 10 }}
         ports:
-          - containerPort: 8080
-            name: http-port
+          - containerPort: 10808
+            name: proxy
             protocol: TCP
           - containerPort: 8443
             name: https-port
@@ -67,30 +64,21 @@ spec:
         volumeMounts:
           - name: sidecar
             mountPath: /etc/proxy/tls/sidecar
+          - mountPath: /run/spire/socket	
+            name: spire-socket
+
 
       imagePullSecrets:
-        - name: docker-greymatter-ro
+        - name: docker.secret
       restartPolicy: Always
       serviceAccount: default
       serviceAccountName: default
       volumes:
         - name: sidecar
           secret:
-            secretName: sidecar
-        - name: certs
-          secret: 
-            secretName: certificate-dump
-        - name: jks
-          secret: 
-            secretName: jks
-        - name: administrators
-          configMap:
-            name: administrators
-            defaultMode: 420
-            items:
-              - key: administrators.txt
-                path: administrators.txt
-        - name: administrators-pvl92
-          configMap:
-            defaultMode: 420
-            name: administrators
+            secretName: sidecar-certs
+        - hostPath:	
+            path: /run/spire/socket	
+            type: DirectoryOrCreate	
+          name: spire-socket	
+	

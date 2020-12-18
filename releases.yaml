@@ -1,14 +1,10 @@
-test:
+default:
   configs:
     aws_profile: di2e-aws
     values_path: "release-values"
     secret_path: "release-secrets"
   releases:
-    my-postgres:
-      chart:
-        path: groundhog2k/postgres
-        version: 0.2.5
-    fib:
+    fibonacci:
       chart:
         path: fibonacci
         # version: 0.1.0
@@ -21,33 +17,43 @@ test:
       release:
         values: test/fib.yaml
         secrets: test/secrets.fib.yaml
-    sidecar-certs:
+
+test:
+  configs:
+    aws_profile: di2e-aws
+    values_path: "release-values"
+    secret_path: "release-secrets"
+  releases:
+    my-postgres:
       chart:
-        path: secrets
-        version: 1.0.0
-      release:
-        secrets: secrets.secrets-sidecar-certs.yaml
-        values: null
+        path: groundhog2k/postgres
+        version: 0.2.5
+    # sidecar-certs:
+    #   chart:
+    #     path: secrets
+    #     version: 1.0.0
+    #   release:
+    #     secrets: secrets.secrets-sidecar-certs.yaml
+    #     values: null
     nifi:
       chart:
         path: generic-chart
         version: "1.0"
       release:
-        secrets: apple.yaml
-        values: apple.yaml
-      configs:
-        secret_path: "."
-        values_path: "."
+        secrets: test/secrets.nifi.yaml
+        values: test/nifi.yaml
+      # configs:
+      #   secret_path: "."
+      #   values_path: "."
     mongo-test:
       chart:
-        path: kanister/kanister-mongodb-replicaset
-        version: 0.32.0
+        path: bitnami/mongodb
+        version: 10.3.1
       release:
         # secrets: apple.yaml
         # values: temp.json
-      configs:
-        values_path: release-values
-
+      # configs:
+      #   values_path: release-values
 
 dia-wisard:
   configs:

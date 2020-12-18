@@ -55,7 +55,8 @@ if [[ -z $RELEASE_NAME ]]; then
     all_ns_releases=$(jq -r '. | map_values(keys) | .releases' <<< $(jq .\"$NAMESPACE\" <<< $(cat temp.json)) | sed 's/\[//' | sed 's/\]//' | sed 's/"//g' | sed 's/,//g' )
     echo $all_ns_releases
         for i in $all_ns_releases; do
-            ./scripts/helm-command-builder.sh $HELM_RUN_COMMAND $NAMESPACE $i
+            (./scripts/helm-command-builder.sh $HELM_RUN_COMMAND $NAMESPACE $i)
+
         done
 else
     ./scripts/helm-command-builder.sh $HELM_RUN_COMMAND $NAMESPACE $RELEASE_NAME
